@@ -1,0 +1,61 @@
+flowchart LR
+%% ===== Styles (defined first) =====
+classDef person fill:#fff7ed,stroke:#a16207,stroke-width:1px;
+classDef ext fill:#eef2ff,stroke:#6366f1,stroke-width:1px;
+
+
+%% ===== People =====
+PPM[PP Member / Traveler]
+TXU[Taxi-Only User / Non-member]
+
+
+%% ===== Systems (collapsed) =====
+subgraph PP[Priority Pass System]
+direction TB
+PPMobile[PP Mobile App]
+PPBackend[PP Backend Services]
+end
+
+
+subgraph TAXI[Global Taxi App System]
+direction TB
+TaxiMobile[Taxi Mobile App]
+TaxiBackend[Taxi Backend Services]
+end
+
+
+%% ===== Externals =====
+Flight[Flight Data Providers / Airlines]
+Maps[Maps / Traffic ETA]
+Push[APNS / FCM]
+Stores[App Store / Play Store]
+Pay[Payment Processor - Taxi scope]
+Hotels[Hotel Partners / Inventory]
+
+
+%% ===== Interactions =====
+PPM -->|uses| PPMobile
+TXU -->|uses| TaxiMobile
+
+
+PPMobile -->|deep link| TaxiMobile
+TaxiMobile -->|deep link | PPMobile
+PPMobile -->|fallback install| Stores
+
+
+PPBackend -->|benefits data API| TaxiBackend
+PPBackend <--> |flight status| Flight
+PPBackend <--> |ETA inputs| Maps
+PPBackend -->|push notifications| Push
+
+
+%% Consent-gated data push (dotted)
+PPBackend -.->|consented webhook leads| TaxiBackend
+
+
+TaxiBackend -->|operational payments| Pay
+
+
+%% ===== Class assignments =====
+class PPM,TXU person
+class Flight,Maps,Push,Stores,Pay,Hotels ext

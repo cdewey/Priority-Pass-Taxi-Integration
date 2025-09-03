@@ -1,0 +1,69 @@
+flowchart TB
+
+  %% ===== Priority Pass Containers =====
+  subgraph PP [Priority Pass Platform]
+    direction TB
+    PPMobile[PP Mobile App]
+
+    subgraph Core [Backend Services]
+      direction TB
+      Reg[Registration Service]
+      Journey[Journey Context Service]
+      Consent[Consent and Privacy Service]
+      Partner[Partner Orchestration Service]
+      Benefits[Benefits Content API]
+      Notify[Notification Orchestrator]
+      Attrib[Attribution and Affiliate Service]
+      Rules[Feature Flags and Rules]
+      Events[Analytics and Event Pipeline]
+      Keys[Key Management and JWKS]
+    end
+
+    subgraph Data [Data Stores]
+      direction TB
+      MemberDB[Member Profiles]
+      TripDB[Trip and Flight Context]
+      ConsentDB[Consent Ledger]
+      EventDB[Event and Attribution Logs]
+      Cache[Caches and Queues]
+    end
+  end
+
+  %% ===== Taxi Partner Containers =====
+  subgraph TAXI [Global Taxi Partner]
+    direction TB
+    TaxiApp[Taxi Mobile App]
+    TaxiGW[Taxi Partner Gateway]
+    Dispatch[Booking and Dispatch Systems]
+  end
+
+  %% ===== External Providers =====
+  subgraph EXT [External Providers]
+    direction TB
+    Flight[Flight Data APIs]
+    Maps[Maps and Traffic]
+    Push[APNS and FCM]
+    Stores[App and Play Stores]
+  end
+
+  %% ===== Flows =====
+  PPMobile --> Reg
+  PPMobile -->|deep link| TaxiApp
+  TaxiApp -->|deep link| PPMobile
+  Benefits -->|benefits data| TaxiGW
+  Journey -->|flight status| Flight
+  Journey -->|ETA inputs| Maps
+  Notify -->|push notifications| Push
+  Partner -.->|consented webhook events| TaxiGW
+  TaxiGW -->|callbacks redeem book complete| Partner
+
+  %% ===== Data edges =====
+  Reg --> MemberDB
+  PPMobile --> Journey
+  Journey --> TripDB
+  Consent --> ConsentDB
+  Partner --> EventDB
+  Attrib --> EventDB
+  Journey -.-> Cache
+  Partner -.-> Cache
+  Notify -.-> Cache

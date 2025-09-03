@@ -1,0 +1,44 @@
+flowchart LR
+
+  %% ===== Container: Partner Orchestration =====
+  subgraph Partner_Orchestration [Partner Orchestration Service]
+    direction TB
+    Registry[Partner Registry]
+    ConsentGate[Consent Gate]
+    TokenService[Token Service]
+    Dispatcher[Webhook Dispatcher]
+    Delivery[Delivery Manager]
+    DLQ[Dead Letter Queue]
+    ReplayAPI[Replay API]
+    Callback[Attribution Callback Handler]
+    Audit[Audit Logger]
+    Store[(Event Store)]
+  end
+
+  %% ===== External collaborators =====
+  LeadIn[Lead Event from PP Core]
+  ConsentSvc[Consent Service]
+  AttribSvc[Attribution Service]
+  Keys[Key Management and JWKS]
+  TaxiGW[Taxi Partner Gateway]
+
+  %% ===== Core flow: produce and dispatch a lead =====
+  LeadIn --> ConsentGate
+  ConsentSvc --> ConsentGate
+  ConsentGate --> Dispatcher
+  TokenService --> Dispatcher
+  Registry --> Dispatcher
+
+  Dispatcher --> Delivery
+  Delivery --> Store
+  Delivery -.->|fail| DLQ
+  ReplayAPI --> TaxiGW
+
+  %% ===== Callbacks and reconciliation =====
+  TaxiGW -->|callbacks redeem book complete| Callback
+  Callback --> Store
+  Store --> Audit
+
+  %% ===== Support deps =====
+  AttribSvc --> TokenService
+  Keys --> TokenService
